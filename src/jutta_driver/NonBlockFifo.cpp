@@ -40,6 +40,7 @@ void NonBlockFifo::open_pipe() {
         }
         // Check again if the FIFO now exists and works:
         open_pipe();
+        return;
     }
 
     // Open the file descriptor:
