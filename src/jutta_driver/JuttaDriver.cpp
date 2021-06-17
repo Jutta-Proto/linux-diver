@@ -40,7 +40,7 @@ void JuttaDriver::run() {
         shouldRun = false;
         return;
     }
-    SPDLOG_INFO("Jutta driver stopped.");
+    SPDLOG_INFO("Jutta driver started.");
     std::vector<uint8_t> readBuffer{};
     std::vector<uint8_t> writeBuffer{};
     bool wasAction = false;
