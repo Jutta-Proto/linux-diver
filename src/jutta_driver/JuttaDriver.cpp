@@ -2,6 +2,7 @@
 #include "jutta_driver/NonBlockFifo.hpp"
 #include "logger/Logger.hpp"
 #include <chrono>
+#include <cmath>
 #include <exception>
 #include <filesystem>
 #include <memory>
@@ -29,6 +30,13 @@ JuttaDriver::~JuttaDriver() {
 void JuttaDriver::run() {
     SPDLOG_INFO("Starting Jutta driver...");
     shouldRun = true;
+    try {
+        connection.init();
+    } catch (const std::exception& e) {
+        SPDLOG_ERROR("Failed to initialize Jutta connection with: {}", e.what());
+        shouldRun = false;
+        return;
+    }
     SPDLOG_INFO("Jutta driver stopped.");
     while (shouldRun) {
     }

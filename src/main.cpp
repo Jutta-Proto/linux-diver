@@ -73,5 +73,7 @@ int main(int argc, char** argv) {
 
     register_sig_handlers();
     driver->run();
+    // Set the driver to NULL, to prevent the logger from failing during destructor:
+    driver = nullptr;
     return 0;
 }
