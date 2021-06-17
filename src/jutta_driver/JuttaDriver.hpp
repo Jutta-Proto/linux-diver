@@ -16,10 +16,13 @@ constexpr std::string_view RX_FIFO_FILE_NAME = "rx";
 
 class JuttaDriver {
  private:
-    jutta_proto::JuttaConnection connection;
+    const std::filesystem::path baseDirPath = BASE_DIR_PATH;
 
     std::unique_ptr<NonBlockFifo> txFifo{nullptr};
     std::unique_ptr<NonBlockFifo> rxFifo{nullptr};
+
+    jutta_proto::JuttaConnection connection;
+    bool shouldRun{false};
 
  public:
     explicit JuttaDriver(std::string&& device);
@@ -27,11 +30,16 @@ class JuttaDriver {
     JuttaDriver(const JuttaDriver&) = delete;
     JuttaDriver& operator=(JuttaDriver&&) = delete;
     JuttaDriver& operator=(const JuttaDriver&) = delete;
-    ~JuttaDriver() = default;
+    ~JuttaDriver();
 
     void create_file_structure();
 
     void run();
+    void stop();
+
+ private:
+    void register_sig_handler();
+    void sig_handler(int signal);
 };
 //---------------------------------------------------------------------------
 }  // namespace jutta_driver

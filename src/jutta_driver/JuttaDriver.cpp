@@ -1,10 +1,12 @@
 #include "JuttaDriver.hpp"
 #include "jutta_driver/NonBlockFifo.hpp"
 #include "logger/Logger.hpp"
+#include <chrono>
 #include <exception>
 #include <filesystem>
 #include <memory>
 #include <stdexcept>
+#include <spdlog/spdlog.h>
 
 //---------------------------------------------------------------------------
 namespace jutta_driver {
@@ -13,11 +15,32 @@ JuttaDriver::JuttaDriver(std::string&& device) : connection(std::move(device)) {
     create_file_structure();
 }
 
+JuttaDriver::~JuttaDriver() {
+    txFifo = nullptr;
+    rxFifo = nullptr;
+
+    if (std::filesystem::exists(baseDirPath)) {
+        if (!std::filesystem::remove(baseDirPath)) {
+            SPDLOG_WARN("Failed to remove base directory at: {}", baseDirPath.c_str());
+        }
+    }
+}
+
 void JuttaDriver::run() {
+    SPDLOG_INFO("Starting Jutta driver...");
+    shouldRun = true;
+    SPDLOG_INFO("Jutta driver stopped.");
+    while (shouldRun) {
+    }
+    SPDLOG_INFO("Jutta driver stopped.");
+}
+
+void JuttaDriver::stop() {
+    SPDLOG_INFO("Stopping Jutta driver...");
+    shouldRun = false;
 }
 
 void JuttaDriver::create_file_structure() {
-    static std::filesystem::path baseDirPath = BASE_DIR_PATH;
     if (!std::filesystem::exists(baseDirPath)) {
         if (!std::filesystem::create_directory(baseDirPath)) {
             throw std::runtime_error("Failed to create directory: " + baseDirPath.native());

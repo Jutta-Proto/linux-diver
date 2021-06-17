@@ -1,16 +1,33 @@
 #include "jutta_driver/JuttaDriver.hpp"
 #include "logger/Logger.hpp"
+#include <csignal>
 #include <filesystem>
 #include <iostream>
+#include <cassert>
 #include <memory>
 #include <stdexcept>
 #include <spdlog/spdlog.h>
+
+// NOLINTNEXTLINE (cppcoreguidelines-avoid-non-const-global-variables)
+std::unique_ptr<jutta_driver::JuttaDriver> driver{nullptr};
 
 void print_help(const std::string& fileName) {
     std::cout << "Usage:\n";
     std::cout << "./" << fileName << " <path>\n";
     std::cout << "Example:\n";
     std::cout << "./" << fileName << " /dev/serial0\n";
+}
+
+void sig_handler(int signal) {
+    if(signal == SIGTERM || signal == SIGINT) {
+        assert(driver);
+        driver->stop();
+    }
+}
+
+void register_sig_handlers() {
+    std::signal(SIGTERM, sig_handler);
+    std::signal(SIGINT, sig_handler);
 }
 
 int main(int argc, char** argv) {
@@ -47,7 +64,6 @@ int main(int argc, char** argv) {
         return -3;
     }
 
-    std::unique_ptr<jutta_driver::JuttaDriver> driver;
     try {
         driver = std::make_unique<jutta_driver::JuttaDriver>(serialPath);
     } catch (const std::exception& e) {
@@ -55,6 +71,7 @@ int main(int argc, char** argv) {
         return -4;
     }
 
+    register_sig_handlers();
     driver->run();
     return 0;
 }
