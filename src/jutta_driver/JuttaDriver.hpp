@@ -11,8 +11,8 @@
 namespace jutta_driver {
 //---------------------------------------------------------------------------
 constexpr std::string_view BASE_DIR_PATH = "/tmp/coffee_maker";
-constexpr std::string_view TX_FIFO_PATH = "/tmp/coffee_maker/tx";
-constexpr std::string_view RX_FIFO_PATH = "/tmp/coffee_maker/rx";
+constexpr std::string_view TX_FIFO_FILE_NAME = "tx";
+constexpr std::string_view RX_FIFO_FILE_NAME = "rx";
 
 class JuttaDriver {
  private:

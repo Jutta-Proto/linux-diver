@@ -27,8 +27,8 @@ void JuttaDriver::create_file_structure() {
         throw std::runtime_error(baseDirPath.native() + " is not a directory!");
     }
 
-    txFifo = std::make_unique<NonBlockFifo>(TX_FIFO_PATH, NonBlockFifoMode::READING);
-    rxFifo = std::make_unique<NonBlockFifo>(RX_FIFO_PATH, NonBlockFifoMode::WRITING);
+    txFifo = std::make_unique<NonBlockFifo>(baseDirPath / TX_FIFO_FILE_NAME, NonBlockFifoMode::READING);
+    rxFifo = std::make_unique<NonBlockFifo>(baseDirPath / RX_FIFO_FILE_NAME, NonBlockFifoMode::WRITING);
 }
 //---------------------------------------------------------------------------
 }  // namespace jutta_driver

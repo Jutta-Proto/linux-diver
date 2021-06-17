@@ -1,10 +1,12 @@
 #include "NonBlockFifo.hpp"
 #include "logger/Logger.hpp"
 #include <cassert>
+#include <cerrno>
 #include <cstdio>
 #include <exception>
 #include <filesystem>
 #include <stdexcept>
+#include <system_error>
 #include <fcntl.h>
 #include <spdlog/spdlog.h>
 #include <sys/stat.h>
@@ -15,6 +17,7 @@
 namespace jutta_driver {
 //---------------------------------------------------------------------------
 NonBlockFifo::NonBlockFifo(std::filesystem::path&& path, NonBlockFifoMode mode) : path(std::move(path)), mode(mode) {
+    SPDLOG_DEBUG("Opening FIFO '{}' in mode {}.", this->path.c_str(), this->mode);
     open_pipe();
 }
 
@@ -34,8 +37,8 @@ void NonBlockFifo::open_pipe() {
         }
     } else {
         int result = mkfifo(path.c_str(), 0666);
-        if (result < 0) {
-            std::string errorStr = strerror(result);
+        if (result != 0) {
+            std::string errorStr = strerror(errno);
             throw std::runtime_error("Failed to create FIFO at " + path.native() + " - " + errorStr);
         }
         // Check again if the FIFO now exists and works:
@@ -47,10 +50,10 @@ void NonBlockFifo::open_pipe() {
     if (mode == NonBlockFifoMode::READING) {
         fd = open(path.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
     } else {
-        fd = open(path.c_str(), O_WRONLY | O_NONBLOCK | O_CLOEXEC);
+        fd = open(path.c_str(), O_RDWR | O_NONBLOCK | O_CLOEXEC);
     }
     if (fd < 0) {
-        std::string errorStr = strerror(fd);
+        std::string errorStr = strerror(errno);
         throw std::runtime_error("Failed to open FIFO '" + path.native() + "' with: " + errorStr);
     }
     SPDLOG_DEBUG("FIFO '{}' in mode {} opened.", path.c_str(), mode);
@@ -58,7 +61,7 @@ void NonBlockFifo::open_pipe() {
 
 void NonBlockFifo::close_pipe() {
     if (std::filesystem::exists(path)) {
-        if (std::filesystem::remove(path)) {
+        if (!std::filesystem::remove(path)) {
             SPDLOG_WARN("Failed to remove FIFO at: {}", path.c_str());
         }
     }
