@@ -1,8 +1,11 @@
 #include "NonBlockFifo.hpp"
 #include "logger/Logger.hpp"
+#include <array>
 #include <cassert>
 #include <cerrno>
+#include <cstddef>
 #include <cstdio>
+#include <cstring>
 #include <exception>
 #include <filesystem>
 #include <stdexcept>
@@ -27,6 +30,10 @@ NonBlockFifo::~NonBlockFifo() {
 
 const std::filesystem::path& NonBlockFifo::get_path() const {
     return path;
+}
+
+NonBlockFifoMode NonBlockFifo::get_mode() const {
+    return mode;
 }
 
 void NonBlockFifo::open_pipe() {
@@ -75,6 +82,28 @@ void NonBlockFifo::writeNb(const char* buffer, size_t len) const {
 
 void NonBlockFifo::writeNb(const std::string& buffer) const {
     writeNb(buffer.c_str(), buffer.size());
+}
+
+void NonBlockFifo::writeNb(const std::vector<uint8_t>& buffer) const {
+    assert(mode == NonBlockFifoMode::WRITING);
+    write(fd, buffer.data(), buffer.size());
+}
+
+size_t NonBlockFifo::readNb(std::vector<uint8_t>* buffer) {
+    assert(mode == NonBlockFifoMode::READING);
+    size_t count = 0;
+    std::array<uint8_t, 20> tmpBuffer{};
+    size_t tmpCount = 0;
+    do {
+        tmpCount = read(fd, tmpBuffer.data(), tmpBuffer.size());
+        if (tmpCount > 0) {
+            count += tmpCount;
+            size_t oldSize = buffer->size();
+            buffer->resize(oldSize + tmpCount);
+            std::memcpy(&((*buffer)[oldSize - 1]), tmpBuffer.data(), tmpCount);
+        }
+    } while (tmpCount >= tmpBuffer.size());
+    return count;
 }
 //---------------------------------------------------------------------------
 }  // namespace jutta_driver

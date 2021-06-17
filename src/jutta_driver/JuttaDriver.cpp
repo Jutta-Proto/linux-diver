@@ -5,8 +5,11 @@
 #include <cmath>
 #include <exception>
 #include <filesystem>
+#include <thread>
+#include <vector>
 #include <memory>
 #include <stdexcept>
+#include <bits/stdint-uintn.h>
 #include <spdlog/spdlog.h>
 
 //---------------------------------------------------------------------------
@@ -38,7 +41,34 @@ void JuttaDriver::run() {
         return;
     }
     SPDLOG_INFO("Jutta driver stopped.");
+    std::vector<uint8_t> readBuffer{};
+    std::vector<uint8_t> writeBuffer{};
+    bool wasAction = false;
     while (shouldRun) {
+        wasAction = false;
+
+        // Read:
+        if(txFifo->readNb(&readBuffer) > 0) {
+            if(!connection.write_decoded(readBuffer)) {
+                SPDLOG_WARN("Something went wrong when writing to the coffee maker...");
+            }
+            readBuffer.clear();
+            wasAction = true;
+        }
+
+        // Write:
+        if(connection.read_decoded(writeBuffer)) {
+            rxFifo->writeNb(writeBuffer);
+            writeBuffer.clear();
+            wasAction = true;
+        }
+
+        if(!wasAction) {
+            std::this_thread::sleep_for(std::chrono::milliseconds{250});
+        }
+        else {
+            std::this_thread::yield();
+        }
     }
     SPDLOG_INFO("Jutta driver stopped.");
 }
