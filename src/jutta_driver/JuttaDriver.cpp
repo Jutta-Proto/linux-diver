@@ -1,5 +1,6 @@
 #include "JuttaDriver.hpp"
 #include "jutta_driver/NonBlockFifo.hpp"
+#include "jutta_driver/StatusFile.hpp"
 #include "logger/Logger.hpp"
 #include <chrono>
 #include <cmath>
@@ -44,9 +45,20 @@ void JuttaDriver::run() {
     assert(!rxTxThread);
     rxTxThread = std::make_optional<std::thread>(&JuttaDriver::rx_tx_thread_run, this);
     SPDLOG_INFO("Jutta driver started.");
+    modeFile->replace_contents("1");
     while (shouldRun) {
-        std::this_thread::sleep_for(std::chrono::milliseconds{250});
+        std::shared_ptr<std::string> result = connection.write_decoded_with_response("TY:\r\n");
+        if(result) {
+            deviceFile->replace_contents(*result);
+            statusFile->replace_contents("1");
+        }   
+        else {
+            deviceFile->replace_contents("");
+            statusFile->replace_contents("0");
+        }
+        std::this_thread::sleep_for(std::chrono::seconds{5});
     }
+    statusFile->replace_contents("0");
     rxTxThread->join();
     rxTxThread = std::nullopt;
     SPDLOG_INFO("Jutta driver stopped.");
@@ -69,6 +81,12 @@ void JuttaDriver::create_file_structure() {
 
     txFifo = std::make_unique<NonBlockFifo>(baseDirPath / TX_FIFO_FILE_NAME, NonBlockFifoMode::READING);
     rxFifo = std::make_unique<NonBlockFifo>(baseDirPath / RX_FIFO_FILE_NAME, NonBlockFifoMode::WRITING);
+
+    statusFile = std::make_unique<StatusFile>(baseDirPath / STATUS_FILE_NAME);
+    statusFile->replace_contents("0");
+    modeFile = std::make_unique<StatusFile>(baseDirPath / MODE_FILE_NAME);
+    modeFile->replace_contents("0");
+    deviceFile = std::make_unique<StatusFile>(baseDirPath / DEVICE_FILE_NAME);
 }
 
 void JuttaDriver::rx_tx_thread_run() {
