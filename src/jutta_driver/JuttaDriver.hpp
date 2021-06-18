@@ -36,10 +36,6 @@ class JuttaDriver {
 
     void run();
     void stop();
-
- private:
-    void register_sig_handler();
-    void sig_handler(int signal);
 };
 //---------------------------------------------------------------------------
 }  // namespace jutta_driver
