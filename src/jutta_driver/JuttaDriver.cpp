@@ -5,10 +5,11 @@
 #include <cmath>
 #include <exception>
 #include <filesystem>
+#include <memory>
+#include <optional>
+#include <stdexcept>
 #include <thread>
 #include <vector>
-#include <memory>
-#include <stdexcept>
 #include <bits/stdint-uintn.h>
 #include <spdlog/spdlog.h>
 
@@ -40,7 +41,38 @@ void JuttaDriver::run() {
         shouldRun = false;
         return;
     }
+    assert(!rxTxThread);
+    rxTxThread = std::make_optional<std::thread>(&JuttaDriver::rx_tx_thread_run, this);
     SPDLOG_INFO("Jutta driver started.");
+    while (shouldRun) {
+        std::this_thread::sleep_for(std::chrono::milliseconds{250});
+    }
+    rxTxThread->join();
+    rxTxThread = std::nullopt;
+    SPDLOG_INFO("Jutta driver stopped.");
+}
+
+void JuttaDriver::stop() {
+    SPDLOG_INFO("Stopping Jutta driver...");
+    shouldRun = false;
+}
+
+void JuttaDriver::create_file_structure() {
+    if (!std::filesystem::exists(baseDirPath)) {
+        if (!std::filesystem::create_directory(baseDirPath)) {
+            throw std::runtime_error("Failed to create directory: " + baseDirPath.native());
+        }
+    }
+    if (!std::filesystem::is_directory(baseDirPath)) {
+        throw std::runtime_error(baseDirPath.native() + " is not a directory!");
+    }
+
+    txFifo = std::make_unique<NonBlockFifo>(baseDirPath / TX_FIFO_FILE_NAME, NonBlockFifoMode::READING);
+    rxFifo = std::make_unique<NonBlockFifo>(baseDirPath / RX_FIFO_FILE_NAME, NonBlockFifoMode::WRITING);
+}
+
+void JuttaDriver::rx_tx_thread_run() {
+    SPDLOG_DEBUG("RX/TX Thread started.");
     std::vector<uint8_t> readBuffer{};
     std::vector<uint8_t> writeBuffer{};
     bool wasAction = false;
@@ -70,26 +102,7 @@ void JuttaDriver::run() {
             std::this_thread::yield();
         }
     }
-    SPDLOG_INFO("Jutta driver stopped.");
-}
-
-void JuttaDriver::stop() {
-    SPDLOG_INFO("Stopping Jutta driver...");
-    shouldRun = false;
-}
-
-void JuttaDriver::create_file_structure() {
-    if (!std::filesystem::exists(baseDirPath)) {
-        if (!std::filesystem::create_directory(baseDirPath)) {
-            throw std::runtime_error("Failed to create directory: " + baseDirPath.native());
-        }
-    }
-    if (!std::filesystem::is_directory(baseDirPath)) {
-        throw std::runtime_error(baseDirPath.native() + " is not a directory!");
-    }
-
-    txFifo = std::make_unique<NonBlockFifo>(baseDirPath / TX_FIFO_FILE_NAME, NonBlockFifoMode::READING);
-    rxFifo = std::make_unique<NonBlockFifo>(baseDirPath / RX_FIFO_FILE_NAME, NonBlockFifoMode::WRITING);
+    SPDLOG_DEBUG("RX/TX Thread stopped.");
 }
 //---------------------------------------------------------------------------
 }  // namespace jutta_driver

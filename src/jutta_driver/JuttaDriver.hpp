@@ -4,8 +4,10 @@
 #include <filesystem>
 #include <jutta_proto/JuttaConnection.hpp>
 #include <memory>
+#include <optional>
 #include <streambuf>
 #include <string_view>
+#include <thread>
 
 //---------------------------------------------------------------------------
 namespace jutta_driver {
@@ -18,6 +20,7 @@ class JuttaDriver {
  private:
     const std::filesystem::path baseDirPath = BASE_DIR_PATH;
 
+    std::optional<std::thread> rxTxThread{std::nullopt};
     std::unique_ptr<NonBlockFifo> txFifo{nullptr};
     std::unique_ptr<NonBlockFifo> rxFifo{nullptr};
 
@@ -36,6 +39,9 @@ class JuttaDriver {
 
     void run();
     void stop();
+
+ private:
+    void rx_tx_thread_run();
 };
 //---------------------------------------------------------------------------
 }  // namespace jutta_driver
