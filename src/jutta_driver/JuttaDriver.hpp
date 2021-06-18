@@ -26,7 +26,7 @@ class JuttaDriver {
 
  public:
     explicit JuttaDriver(std::string&& device);
-    JuttaDriver(JuttaDriver&&) = default;
+    JuttaDriver(JuttaDriver&&) = delete;
     JuttaDriver(const JuttaDriver&) = delete;
     JuttaDriver& operator=(JuttaDriver&&) = delete;
     JuttaDriver& operator=(const JuttaDriver&) = delete;
