@@ -4,6 +4,7 @@
 #include "logger/Logger.hpp"
 #include <chrono>
 #include <cmath>
+#include <cstddef>
 #include <exception>
 #include <filesystem>
 #include <memory>
@@ -49,20 +50,20 @@ void JuttaDriver::run() {
     assert(!rxTxThread);
     rxTxThread = std::make_optional<std::thread>(&JuttaDriver::rx_tx_thread_run, this);
     SPDLOG_INFO("Jutta driver started.");
-    modeFile->replace_contents("1");
+    modeFile->replace_contents("1\n");
     while (shouldRun) {
         std::shared_ptr<std::string> result = connection.write_decoded_with_response("TY:\r\n");
         if(result) {
             deviceFile->replace_contents(*result);
-            statusFile->replace_contents("1");
+            statusFile->replace_contents("1\n");
         }   
         else {
             deviceFile->replace_contents("");
-            statusFile->replace_contents("0");
+            statusFile->replace_contents("0\n");
         }
         std::this_thread::sleep_for(std::chrono::seconds{5});
     }
-    statusFile->replace_contents("0");
+    statusFile->replace_contents("0\n");
     rxTxThread->join();
     rxTxThread = std::nullopt;
     SPDLOG_INFO("Jutta driver stopped.");
