@@ -25,7 +25,9 @@ void StatusFile::replace_contents(const char* buffer, size_t len) const {
     // Reduce strain on the file system by first checking if the file already contains the correct value:
     if (!check_file_contents(buffer, len)) {
         std::ofstream file(path, std::ofstream::trunc | std::ofstream::out);
-        file.write(buffer, len);
+        if (len > 0) {
+            file.write(buffer, len);
+        }
         file.close();
     }
 }
