@@ -25,6 +25,10 @@ JuttaDriver::~JuttaDriver() {
     txFifo = nullptr;
     rxFifo = nullptr;
 
+    statusFile = nullptr;
+    modeFile = nullptr;
+    deviceFile = nullptr;
+
     if (std::filesystem::exists(baseDirPath)) {
         if (!std::filesystem::remove(baseDirPath)) {
             SPDLOG_WARN("Failed to remove base directory at: {}", baseDirPath.c_str());
