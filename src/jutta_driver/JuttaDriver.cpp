@@ -54,6 +54,10 @@ void JuttaDriver::run() {
     while (shouldRun) {
         std::shared_ptr<std::string> result = connection.write_decoded_with_response("TY:\r\n");
         if(result) {
+            size_t pos = result->find("ty:");
+            if (pos == 0) {
+                *result = result->substr(3);
+            }
             deviceFile->replace_contents(*result);
             statusFile->replace_contents("1\n");
         }   
