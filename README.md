@@ -1,3 +1,56 @@
-# linux-diver
-A linux driver for JURA coffee makers using UART focusing on the Raspberry Pi.  
-Currently only a placeholder repo. This will be filled in the future.
+# Linux Driver
+
+The code in this repository acts as a Linux interface for controlling JURA coffee makers over a [serial (UART)](https://www.raspberrypi.org/documentation/configuration/uart.md) connection.
+Once running, the following file-interface will be exposed:
+```
+/
+├── tmp
+│   ├── coffee_maker
+│   │   ├── tx
+│   │   ├── rx
+│   │   ├── status
+│   │   ├── mode
+│   │   └── device
+│   └── ...
+└── ...
+```
+
+* `tx` is a [FIFO named pipe](https://man7.org/linux/man-pages/man7/fifo.7.html) where you can write stuff to, to send it to the coffee maker.
+* `rx` is a [FIFO named pipe](https://man7.org/linux/man-pages/man7/fifo.7.html) where you can read stuff from, that gets send from the coffee maker.
+* `status` is a simple text file containing the status of the connection (`1` == Running).
+* `mode` is a simple text file containing the current operation mode. Currently just a placeholder for the future.
+* `device` is a simple text file containing the device name of the connected coffee maker (e.g. `EF532M V02.03`).
+
+## Requirements
+The following requirements are required to build this project.
+* A C++20 compatible compiler like [gcc](https://gcc.gnu.org/) or [clang](https://clang.llvm.org/)
+* The build system is written using [CMake](https://cmake.org/)
+* For managing dependencies in CMake, we are using [conan](https://conan.io/)
+
+### Fedora
+To install those dependencies on Fedora, run the following commands:
+```bash
+sudo dnf install -y gcc clang cmake python3 python3-pip
+pip3 install --user conan
+```
+
+## Building
+Run the following commands to build this project:
+```bash
+# Clone the repository:
+git clone git@github.com:Jutta-Proto/linux-driver.git
+# Switch into the newly cloned repository:
+cd linux-driver
+# Build the project:
+mkdir build
+cd build
+cmake ..
+cmake --build .
+```
+
+## Usage
+From inside the `build` directory, you can execute the drive with the following command:
+```
+./src/Jutta_Driver /dev/tty0
+```
+Here `/dev/tty0` is the path to the serial port, you are using. In case you are running this on a Raspberry Pi, and you connected like described [here](https://github.com/Jutta-Proto/hardware-pi#connecting-a-coffee-maker), it should be `/dev/tty0`.
