@@ -49,7 +49,7 @@ cmake --build .
 ```
 
 ## Usage
-From inside the `build` directory, you can execute the drive with the following command:
+From inside the `build` directory, you can execute the driver with the following command:
 ```
 ./src/Jutta_Driver /dev/tty0
 ```
