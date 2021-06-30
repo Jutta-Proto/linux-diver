@@ -54,3 +54,30 @@ From inside the `build` directory, you can execute the drive with the following 
 ./src/Jutta_Driver /dev/tty0
 ```
 Here `/dev/tty0` is the path to the serial port, you are using. In case you are running this on a Raspberry Pi, and you connected like described [here](https://github.com/Jutta-Proto/hardware-pi#connecting-a-coffee-maker), it should be `/dev/tty0`.
+
+## Example
+The following example shows how to read from a [FIFO named pipe](https://man7.org/linux/man-pages/man7/fifo.7.html).
+```python
+import os
+import errno
+
+FIFO = "/tmp/coffee_maker/rx"
+
+try:
+    os.mkfifo(FIFO)
+except OSError as oe:
+    if oe.errno != errno.EEXIST:
+        raise
+
+while True:
+    print("Opening FIFO...")
+    with open(FIFO) as fifo:
+        print("FIFO opened")
+        while True:
+            data = fifo.read()
+            if len(data) == 0:
+                print("Writer closed")
+                break
+            print('Read: "{0}"'.format(data))
+```
+Source: https://stackoverflow.com/a/39089792
