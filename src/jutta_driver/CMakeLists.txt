@@ -6,6 +6,6 @@ add_library(jutta_driver SHARED JuttaDriver.hpp
                                 NonBlockFifo.cpp
                                 StatusFile.cpp
                                 StatusFile.hpp)
-target_link_libraries(jutta_driver PRIVATE jutta_proto logger)
+target_link_libraries(jutta_driver PRIVATE jutta_proto logger stdc++fs)
 
 install(TARGETS jutta_driver)
