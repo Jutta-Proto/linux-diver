@@ -3,5 +3,8 @@
         "args": [
             "/dev/tty0"
         ]
-    }
+    },
+    "cmake.configureArgs": [
+        "-DJUTTA_DRIVER_ENABLE_LINTING=ON"
+    ]
 }

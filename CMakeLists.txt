@@ -26,7 +26,7 @@ endmacro()
 message(STATUS "C++ Jutta Driver Options")
 message(STATUS "=======================================================")
 jutta_driver_option(JUTTA_DRIVER_STATIC_ANALYZE "Set to ON to enable the GCC 10 static analysis. If enabled, JUTTA_DRIVER_ENABLE_LINTING has to be disabled." OFF)
-jutta_driver_option(JUTTA_DRIVER_ENABLE_LINTING "Set to ON to enable clang linting. If enabled, JUTTA_DRIVER_STATIC_ANALYZE has to be disabled." ON)
+jutta_driver_option(JUTTA_DRIVER_ENABLE_LINTING "Set to ON to enable clang linting. If enabled, JUTTA_DRIVER_STATIC_ANALYZE has to be disabled." OFF)
 message(STATUS "=======================================================")
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
