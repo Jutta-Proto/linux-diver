@@ -11,6 +11,14 @@ set(VERSION_NAME "dev")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Set the default build type to release if nothing is specified:
+set(JUTTA_DRIVER_DEFAULT_BUILD_TYPE "Release")
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "Setting build type to '${JUTTA_DRIVER_DEFAULT_BUILD_TYPE}' as none was specified.")
+  set(CMAKE_BUILD_TYPE "${JUTTA_DRIVER_DEFAULT_BUILD_TYPE}" CACHE STRING "Choose the type of build." FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+endif()
+
 macro(jutta_driver_option OPTION_NAME OPTION_TEXT OPTION_DEFAULT)
     option(${OPTION_NAME} ${OPTION_TEXT} ${OPTION_DEFAULT})
     if(DEFINED ENV{${OPTION_NAME}})
