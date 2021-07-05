@@ -46,7 +46,7 @@ For all the other requirements, head over here: https://github.com/Jutta-Proto/h
 Run the following commands to build this project:
 ```bash
 # Clone the repository:
-git clone git@github.com:Jutta-Proto/linux-driver.git
+git clone https://github.com/Jutta-Proto/linux-diver.git
 # Switch into the newly cloned repository:
 cd linux-driver
 # Build the project:
