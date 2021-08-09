@@ -1,5 +1,6 @@
 #pragma once
 
+#include "BTDBus.hpp"
 #include "jutta_driver/NonBlockFifo.hpp"
 #include "jutta_driver/StatusFile.hpp"
 #include <filesystem>
@@ -32,6 +33,8 @@ class JuttaBTDriver {
     std::unique_ptr<jutta_driver::StatusFile> deviceFile{nullptr};
 
     bool shouldRun{false};
+
+    BTDBus bus{};
 
  public:
     explicit JuttaBTDriver();

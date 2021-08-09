@@ -46,6 +46,13 @@ include(gcc_analyze)
 include(clear_variable)
 include(FetchContent)
 
+# DBus for the BT driver:
+find_package(PkgConfig)
+pkg_check_modules(DBUS dbus-1)
+include_directories(${DBUS_INCLUDE_DIRS})
+link_directories(${DBUS_LIBRARY_DIRS})
+
+# Linting:
 if(${JUTTA_DRIVER_ENABLE_LINTING})
     message(STATUS "Enabling linting")
     include(clang-tidy)

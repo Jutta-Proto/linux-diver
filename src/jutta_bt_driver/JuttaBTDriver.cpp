@@ -39,7 +39,10 @@ void JuttaBTDriver::run() {
     SPDLOG_INFO("Starting Jutta driver...");
     shouldRun = true;
     try {
-        // TODO: Init BT
+        if (!bus.init()) {
+            shouldRun = false;
+            return;
+        }
     } catch (const std::exception& e) {
         SPDLOG_ERROR("Failed to initialize Jutta connection with: {}", e.what());
         shouldRun = false;
@@ -50,6 +53,7 @@ void JuttaBTDriver::run() {
     SPDLOG_INFO("Jutta driver started.");
     modeFile->replace_contents("1\n");
     while (shouldRun) {
+        // TODO: Request device type
         std::shared_ptr<std::string> result = std::make_shared<std::string>();
         if (result) {
             size_t pos = result->find("ty:");
