@@ -101,6 +101,7 @@ size_t NonBlockFifo::readNb(std::vector<uint8_t>* buffer) {
         if (tmpCount > 0) {
             count += tmpCount;
             size_t oldSize = buffer->size();
+            SPDLOG_DEBUG("Resizing. oldSize: {}, tmpCount: {}", oldSize, tmpCount);
             buffer->resize(oldSize + tmpCount);
             std::memcpy(&((*buffer)[oldSize - 1]), tmpBuffer.data(), tmpCount);
         }
