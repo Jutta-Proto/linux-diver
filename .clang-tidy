@@ -28,7 +28,8 @@ Checks: '*,
 -fuchsia-multiple-inheritance,
 -hicpp-signed-bitwise,
 -misc-no-recursion,
--cppcoreguidelines-pro-bounds-constant-array-index
+-cppcoreguidelines-pro-bounds-constant-array-index,
+-google-readability-todo
 '
 WarningsAsErrors: '*'
 HeaderFilterRegex: 'src/*.hpp'

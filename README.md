@@ -59,7 +59,7 @@ cmake --build .
 ## Usage
 From inside the `build` directory, you can execute the driver with the following command:
 ```
-./src/Jutta_Driver /dev/tty0
+./src/uart_driver /dev/tty0
 ```
 Here `/dev/tty0` is the path to the serial port, you are using. In case you are running this on a Raspberry Pi, and you connected like described [here](https://github.com/Jutta-Proto/hardware-pi#connecting-a-coffee-maker), it should be `/dev/tty0`.
 
