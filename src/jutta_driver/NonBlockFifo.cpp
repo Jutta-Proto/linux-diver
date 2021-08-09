@@ -99,20 +99,20 @@ size_t NonBlockFifo::readNb(std::vector<uint8_t>* buffer) {
     while (true) {
         // Read data chunks:
         ssize_t readCount = read(fd, tmpBuffer.data(), tmpBuffer.size());
+        SPDLOG_INFO("readCount: {}", readCount);
         // Is more data available?
-        if (readCount < static_cast<ssize_t>(tmpBuffer.size())) {
+        if (readCount <= 0) {
             break;
         }
 
         for (ssize_t i = 0; i < readCount; i++) {
             buffer->push_back(tmpBuffer[i]);
         }
-
         count += static_cast<size_t>(readCount);
-        // size_t oldSize = buffer->size();
-        // SPDLOG_DEBUG("Resizing. oldSize: {}, readCount: {}, count: {}", oldSize, readCount, count);
-        // buffer->resize(count);
-        // std::memcpy(&((*buffer)[oldSize - 1]), tmpBuffer.data(), readCount);
+        // Was this the last block?
+        if (readCount < static_cast<ssize_t>(tmpBuffer.size())) {
+            break;
+        }
     }
     SPDLOG_INFO("readNB: {}", count);
     return count;
