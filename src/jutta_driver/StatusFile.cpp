@@ -26,7 +26,7 @@ void StatusFile::replace_contents(const char* buffer, size_t len) const {
     if (!check_file_contents(buffer, len)) {
         std::ofstream file(path, std::ofstream::trunc | std::ofstream::out);
         if (len > 0) {
-            file.write(buffer, len);
+            file.write(buffer, static_cast<std::streamsize>(len));
             file.flush();
         }
         file.close();

@@ -45,6 +45,7 @@ void NonBlockFifo::open_pipe() {
     } else {
         int result = mkfifo(path.c_str(), 0666);
         if (result != 0) {
+            // NOLINTNEXTLINE (concurrency-mt-unsafe)
             std::string errorStr = strerror(errno);
             throw std::runtime_error("Failed to create FIFO at " + path.native() + " - " + errorStr);
         }
@@ -60,6 +61,7 @@ void NonBlockFifo::open_pipe() {
         fd = open(path.c_str(), O_RDWR | O_NONBLOCK | O_CLOEXEC);
     }
     if (fd < 0) {
+        // NOLINTNEXTLINE (concurrency-mt-unsafe)
         std::string errorStr = strerror(errno);
         throw std::runtime_error("Failed to open FIFO '" + path.native() + "' with: " + errorStr);
     }
