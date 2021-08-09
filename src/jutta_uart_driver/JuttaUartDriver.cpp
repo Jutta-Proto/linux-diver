@@ -1,4 +1,4 @@
-#include "JuttaDriver.hpp"
+#include "JuttaUartDriver.hpp"
 #include "jutta_driver/NonBlockFifo.hpp"
 #include "jutta_driver/StatusFile.hpp"
 #include "logger/Logger.hpp"
@@ -16,13 +16,13 @@
 #include <spdlog/spdlog.h>
 
 //---------------------------------------------------------------------------
-namespace jutta_driver {
+namespace jutta_uart_driver {
 //---------------------------------------------------------------------------
-JuttaDriver::JuttaDriver(std::string&& device) : connection(std::move(device)) {
+JuttaUartDriver::JuttaUartDriver(std::string&& device) : connection(std::move(device)) {
     create_file_structure();
 }
 
-JuttaDriver::~JuttaDriver() {
+JuttaUartDriver::~JuttaUartDriver() {
     txFifo = nullptr;
     rxFifo = nullptr;
 
@@ -37,7 +37,7 @@ JuttaDriver::~JuttaDriver() {
     }
 }
 
-void JuttaDriver::run() {
+void JuttaUartDriver::run() {
     SPDLOG_INFO("Starting Jutta driver...");
     shouldRun = true;
     try {
@@ -48,20 +48,19 @@ void JuttaDriver::run() {
         return;
     }
     assert(!rxTxThread);
-    rxTxThread = std::make_optional<std::thread>(&JuttaDriver::rx_tx_thread_run, this);
+    rxTxThread = std::make_optional<std::thread>(&JuttaUartDriver::rx_tx_thread_run, this);
     SPDLOG_INFO("Jutta driver started.");
     modeFile->replace_contents("1\n");
     while (shouldRun) {
         std::shared_ptr<std::string> result = connection.write_decoded_with_response("TY:\r\n");
-        if(result) {
+        if (result) {
             size_t pos = result->find("ty:");
             if (pos == 0) {
                 *result = result->substr(3);
             }
             deviceFile->replace_contents(*result);
             statusFile->replace_contents("1\n");
-        }   
-        else {
+        } else {
             deviceFile->replace_contents("");
             statusFile->replace_contents("0\n");
         }
@@ -73,12 +72,12 @@ void JuttaDriver::run() {
     SPDLOG_INFO("Jutta driver stopped.");
 }
 
-void JuttaDriver::stop() {
+void JuttaUartDriver::stop() {
     SPDLOG_INFO("Stopping Jutta driver...");
     shouldRun = false;
 }
 
-void JuttaDriver::create_file_structure() {
+void JuttaUartDriver::create_file_structure() {
     if (!std::filesystem::exists(baseDirPath)) {
         if (!std::filesystem::create_directory(baseDirPath)) {
             throw std::runtime_error("Failed to create directory: " + baseDirPath.native());
@@ -88,17 +87,17 @@ void JuttaDriver::create_file_structure() {
         throw std::runtime_error(baseDirPath.native() + " is not a directory!");
     }
 
-    txFifo = std::make_unique<NonBlockFifo>(baseDirPath / TX_FIFO_FILE_NAME, NonBlockFifoMode::READING);
-    rxFifo = std::make_unique<NonBlockFifo>(baseDirPath / RX_FIFO_FILE_NAME, NonBlockFifoMode::WRITING);
+    txFifo = std::make_unique<jutta_driver::NonBlockFifo>(baseDirPath / TX_FIFO_FILE_NAME, jutta_driver::NonBlockFifoMode::READING);
+    rxFifo = std::make_unique<jutta_driver::NonBlockFifo>(baseDirPath / RX_FIFO_FILE_NAME, jutta_driver::NonBlockFifoMode::WRITING);
 
-    statusFile = std::make_unique<StatusFile>(baseDirPath / STATUS_FILE_NAME);
+    statusFile = std::make_unique<jutta_driver::StatusFile>(baseDirPath / STATUS_FILE_NAME);
     statusFile->replace_contents("0");
-    modeFile = std::make_unique<StatusFile>(baseDirPath / MODE_FILE_NAME);
+    modeFile = std::make_unique<jutta_driver::StatusFile>(baseDirPath / MODE_FILE_NAME);
     modeFile->replace_contents("0");
-    deviceFile = std::make_unique<StatusFile>(baseDirPath / DEVICE_FILE_NAME);
+    deviceFile = std::make_unique<jutta_driver::StatusFile>(baseDirPath / DEVICE_FILE_NAME);
 }
 
-void JuttaDriver::rx_tx_thread_run() {
+void JuttaUartDriver::rx_tx_thread_run() {
     SPDLOG_DEBUG("RX/TX Thread started.");
     std::vector<uint8_t> readBuffer{};
     std::vector<uint8_t> writeBuffer{};
@@ -107,8 +106,8 @@ void JuttaDriver::rx_tx_thread_run() {
         wasAction = false;
 
         // Read:
-        if(txFifo->readNb(&readBuffer) > 0) {
-            if(!connection.write_decoded(readBuffer)) {
+        if (txFifo->readNb(&readBuffer) > 0) {
+            if (!connection.write_decoded(readBuffer)) {
                 SPDLOG_WARN("Something went wrong when writing to the coffee maker...");
             }
             readBuffer.clear();
@@ -116,21 +115,20 @@ void JuttaDriver::rx_tx_thread_run() {
         }
 
         // Write:
-        if(connection.read_decoded(writeBuffer)) {
+        if (connection.read_decoded(writeBuffer)) {
             rxFifo->writeNb(writeBuffer);
             writeBuffer.clear();
             wasAction = true;
         }
 
-        if(!wasAction) {
+        if (!wasAction) {
             std::this_thread::sleep_for(std::chrono::milliseconds{250});
-        }
-        else {
+        } else {
             std::this_thread::yield();
         }
     }
     SPDLOG_DEBUG("RX/TX Thread stopped.");
 }
 //---------------------------------------------------------------------------
-}  // namespace jutta_driver
+}  // namespace jutta_uart_driver
 //---------------------------------------------------------------------------

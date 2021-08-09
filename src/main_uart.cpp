@@ -1,15 +1,15 @@
-#include "jutta_driver/JuttaDriver.hpp"
+#include "jutta_uart_driver/JuttaUartDriver.hpp"
 #include "logger/Logger.hpp"
+#include <cassert>
 #include <csignal>
 #include <filesystem>
 #include <iostream>
-#include <cassert>
 #include <memory>
 #include <stdexcept>
 #include <spdlog/spdlog.h>
 
 // NOLINTNEXTLINE (cppcoreguidelines-avoid-non-const-global-variables)
-std::unique_ptr<jutta_driver::JuttaDriver> driver{nullptr};
+std::unique_ptr<jutta_uart_driver::JuttaUartDriver> driver{nullptr};
 
 void print_help(const std::string& fileName) {
     std::cout << "Usage:\n";
@@ -19,7 +19,7 @@ void print_help(const std::string& fileName) {
 }
 
 void sig_handler(int signal) {
-    if(signal == SIGTERM || signal == SIGINT) {
+    if (signal == SIGTERM || signal == SIGINT) {
         assert(driver);
         driver->stop();
     }
@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
     }
 
     try {
-        driver = std::make_unique<jutta_driver::JuttaDriver>(serialPath);
+        driver = std::make_unique<jutta_uart_driver::JuttaUartDriver>(serialPath);
     } catch (const std::exception& e) {
         SPDLOG_ERROR("Failed to initialize driver with: {}", e.what());
         return -4;
