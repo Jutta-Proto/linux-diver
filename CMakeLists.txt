@@ -43,6 +43,7 @@ list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
 
 include(sanitizer)
 include(gcc_analyze)
+include(clear_variable)
 include(FetchContent)
 
 if(${JUTTA_DRIVER_ENABLE_LINTING})
@@ -84,6 +85,9 @@ conan_cmake_install(PATH_OR_REFERENCE .
 
 find_package(spdlog REQUIRED)
 
+# Disable linting for jutta_proto
+clear_variable(DESTINATION CMAKE_CXX_CLANG_TIDY BACKUP CMAKE_CXX_CLANG_TIDY_BKP)
+
 FetchContent_Declare(jutta_proto
                      GIT_REPOSITORY         https://github.com/Jutta-Proto/protocol-cpp.git
                      GIT_TAG main
@@ -92,6 +96,8 @@ set(JUTTA_PROTO_BUILD_TESTS OFF)
 set(JUTTA_PROTO_STATIC_ANALYZE OFF)
 set(JUTTA_PROTO_ENABLE_LINTING OFF)
 FetchContent_MakeAvailable(jutta_proto)
+
+restore_variable(DESTINATION CMAKE_CXX_CLANG_TIDY BACKUP CMAKE_CXX_CLANG_TIDY_BKP)
 
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
