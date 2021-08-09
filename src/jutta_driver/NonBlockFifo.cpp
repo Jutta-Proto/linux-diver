@@ -99,7 +99,6 @@ size_t NonBlockFifo::readNb(std::vector<uint8_t>* buffer) {
     while (true) {
         // Read data chunks:
         ssize_t readCount = read(fd, tmpBuffer.data(), tmpBuffer.size());
-        SPDLOG_INFO("readCount: {}", readCount);
         // Is more data available?
         if (readCount <= 0) {
             break;
@@ -114,7 +113,6 @@ size_t NonBlockFifo::readNb(std::vector<uint8_t>* buffer) {
             break;
         }
     }
-    SPDLOG_INFO("readNB: {}", count);
     return count;
 }
 //---------------------------------------------------------------------------
