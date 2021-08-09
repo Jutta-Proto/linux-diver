@@ -96,17 +96,19 @@ size_t NonBlockFifo::readNb(std::vector<uint8_t>* buffer) {
     size_t count = 0;
     // Read chunks of max. 20 bytes per iteration:
     std::array<uint8_t, 20> tmpBuffer{};
-    // Read the first chunk of data:
-    ssize_t readCount = read(fd, tmpBuffer.data(), tmpBuffer.size());
-    while (readCount > 0) {
-        count += readCount;
+    while (true) {
+        // Read data chunks:
+        ssize_t readCount = read(fd, tmpBuffer.data(), tmpBuffer.size());
+        // Is more data available?
+        if (readCount < static_cast<ssize_t>(tmpBuffer.size())) {
+            break;
+        }
+
+        count += static_cast<size_t>(readCount);
         size_t oldSize = buffer->size();
         SPDLOG_DEBUG("Resizing. oldSize: {}, readCount: {}, count: {}", oldSize, readCount, count);
-        buffer->resize(oldSize + readCount);
+        buffer->resize(count);
         std::memcpy(&((*buffer)[oldSize - 1]), tmpBuffer.data(), readCount);
-
-        // Read the next chunk of data:
-        readCount = read(fd, tmpBuffer.data(), tmpBuffer.size());
     }
     SPDLOG_INFO("readNB: {}", count);
     return count;
