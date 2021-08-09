@@ -95,17 +95,16 @@ size_t NonBlockFifo::readNb(std::vector<uint8_t>* buffer) {
     assert(mode == NonBlockFifoMode::READING);
     size_t count = 0;
     std::array<uint8_t, 20> tmpBuffer{};
-    size_t tmpCount = 0;
+    ssize_t tmpCount = 0;
     do {
         tmpCount = read(fd, tmpBuffer.data(), tmpBuffer.size());
         if (tmpCount > 0) {
             count += tmpCount;
             size_t oldSize = buffer->size();
-            SPDLOG_DEBUG("Resizing. oldSize: {}, tmpCount: {}", oldSize, tmpCount);
             buffer->resize(oldSize + tmpCount);
             std::memcpy(&((*buffer)[oldSize - 1]), tmpBuffer.data(), tmpCount);
         }
-    } while (tmpCount >= tmpBuffer.size());
+    } while (tmpCount >= static_cast<ssize_t>(tmpBuffer.size()));
     return count;
 }
 //---------------------------------------------------------------------------
