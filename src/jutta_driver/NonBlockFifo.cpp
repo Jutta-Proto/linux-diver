@@ -104,11 +104,15 @@ size_t NonBlockFifo::readNb(std::vector<uint8_t>* buffer) {
             break;
         }
 
+        for (ssize_t i = 0; i < readCount; i++) {
+            buffer->push_back(tmpBuffer[i]);
+        }
+
         count += static_cast<size_t>(readCount);
-        size_t oldSize = buffer->size();
-        SPDLOG_DEBUG("Resizing. oldSize: {}, readCount: {}, count: {}", oldSize, readCount, count);
-        buffer->resize(count);
-        std::memcpy(&((*buffer)[oldSize - 1]), tmpBuffer.data(), readCount);
+        // size_t oldSize = buffer->size();
+        // SPDLOG_DEBUG("Resizing. oldSize: {}, readCount: {}, count: {}", oldSize, readCount, count);
+        // buffer->resize(count);
+        // std::memcpy(&((*buffer)[oldSize - 1]), tmpBuffer.data(), readCount);
     }
     SPDLOG_INFO("readNB: {}", count);
     return count;
