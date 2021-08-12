@@ -46,12 +46,6 @@ include(gcc_analyze)
 include(clear_variable)
 include(FetchContent)
 
-# DBus for the BT driver:
-find_package(PkgConfig)
-pkg_check_modules(DBUS dbus-1)
-include_directories(${DBUS_INCLUDE_DIRS})
-link_directories(${DBUS_LIBRARY_DIRS})
-
 # Linting:
 if(${JUTTA_DRIVER_ENABLE_LINTING})
     message(STATUS "Enabling linting")
@@ -92,17 +86,21 @@ conan_cmake_install(PATH_OR_REFERENCE .
 
 find_package(spdlog REQUIRED)
 
-# Disable linting for jutta_proto
+# Disable linting for fetch content projects
 clear_variable(DESTINATION CMAKE_CXX_CLANG_TIDY BACKUP CMAKE_CXX_CLANG_TIDY_BKP)
 
 FetchContent_Declare(jutta_proto
-                     GIT_REPOSITORY         https://github.com/Jutta-Proto/protocol-cpp.git
-                     GIT_TAG main
-                     USES_TERMINAL_DOWNLOAD TRUE)   # <---- This is needed only for Ninja to show download progress
+                     GIT_REPOSITORY https://github.com/Jutta-Proto/protocol-cpp.git
+                     GIT_TAG main)
 set(JUTTA_PROTO_BUILD_TESTS OFF)
 set(JUTTA_PROTO_STATIC_ANALYZE OFF)
 set(JUTTA_PROTO_ENABLE_LINTING OFF)
 FetchContent_MakeAvailable(jutta_proto)
+
+FetchContent_Declare(gattlib
+                     GIT_REPOSITORY https://github.com/labapart/gattlib.git
+                     GIT_TAG master)
+FetchContent_MakeAvailable(gattlib)
 
 restore_variable(DESTINATION CMAKE_CXX_CLANG_TIDY BACKUP CMAKE_CXX_CLANG_TIDY_BKP)
 

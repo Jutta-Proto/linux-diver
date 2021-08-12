@@ -1,4 +1,6 @@
 #include "JuttaBTDriver.hpp"
+#include "BLEDevice.hpp"
+#include "BLEHelper.hpp"
 #include "jutta_driver/NonBlockFifo.hpp"
 #include "jutta_driver/StatusFile.hpp"
 #include "logger/Logger.hpp"
@@ -13,6 +15,7 @@
 #include <thread>
 #include <vector>
 #include <bits/stdint-uintn.h>
+#include <gattlib.h>
 #include <spdlog/spdlog.h>
 
 //---------------------------------------------------------------------------
@@ -39,10 +42,7 @@ void JuttaBTDriver::run() {
     SPDLOG_INFO("Starting Jutta driver...");
     shouldRun = true;
     try {
-        if (!bus.init()) {
-            shouldRun = false;
-            return;
-        }
+        // TODO: Init jutta connection here
     } catch (const std::exception& e) {
         SPDLOG_ERROR("Failed to initialize Jutta connection with: {}", e.what());
         shouldRun = false;
@@ -101,20 +101,22 @@ void JuttaBTDriver::create_file_structure() {
 
 void JuttaBTDriver::rx_tx_thread_run() const {
     SPDLOG_DEBUG("RX/TX Thread started.");
-    std::vector<uint8_t> readBuffer{};
-    std::vector<uint8_t> writeBuffer{};
-    bool wasAction = false;
+
     while (shouldRun) {
-        wasAction = false;
+        // Scan for the device:
+        std::shared_ptr<BLEDevice> device{nullptr};
+        while (shouldRun && !device) {
+            device = scan_for_device("TT214H BlueFrog");
+            if (!device) {
+                std::this_thread::sleep_for(std::chrono::seconds{2});
+            }
+        }
 
-        // Read:
-
-        // Write:
-
-        if (!wasAction) {
-            std::this_thread::sleep_for(std::chrono::milliseconds{250});
-        } else {
-            std::this_thread::yield();
+        if (device && shouldRun) {
+            // Connect to the device:
+            if (device->connect()) {
+                SPDLOG_INFO("Connected!");
+            }
         }
     }
     SPDLOG_DEBUG("RX/TX Thread stopped.");
