@@ -22,7 +22,7 @@ void on_device_discovered(void* adapter, const char* addr, const char* name, voi
     }
 }
 
-std::shared_ptr<BLEDevice> scan_for_device(std::string&& name) {
+std::shared_ptr<BTCoffeeMaker> scan_for_device(std::string&& name) {
     SPDLOG_DEBUG("Scanning for devices...");
     void* adapter = nullptr;
     if (gattlib_adapter_open(nullptr, &adapter)) {
@@ -42,7 +42,7 @@ std::shared_ptr<BLEDevice> scan_for_device(std::string&& name) {
     gattlib_adapter_close(adapter);
     SPDLOG_INFO("Scan stoped");
     if (args.success) {
-        return std::make_shared<BLEDevice>(std::move(args.name), std::move(args.addr));
+        return std::make_shared<BTCoffeeMaker>(std::move(args.name), std::move(args.addr));
     }
     return nullptr;
 }

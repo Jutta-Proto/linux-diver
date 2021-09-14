@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BLEDevice.hpp"
+#include "BTCoffeeMaker.hpp"
 #include <memory>
 #include <mutex>
 #include <string>
@@ -16,7 +16,7 @@ struct ScanArgs {
     std::string addr;
 } __attribute__((aligned(128)));
 
-std::shared_ptr<BLEDevice> scan_for_device(std::string&& name);
+std::shared_ptr<BTCoffeeMaker> scan_for_device(std::string&& name);
 //---------------------------------------------------------------------------
 }  // namespace jutta_bt_driver
 //---------------------------------------------------------------------------

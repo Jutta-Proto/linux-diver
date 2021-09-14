@@ -1,6 +1,6 @@
 #include "JuttaBTDriver.hpp"
-#include "BLEDevice.hpp"
 #include "BLEHelper.hpp"
+#include "BTCoffeeMaker.hpp"
 #include "jutta_driver/NonBlockFifo.hpp"
 #include "jutta_driver/StatusFile.hpp"
 #include "logger/Logger.hpp"
@@ -104,7 +104,7 @@ void JuttaBTDriver::rx_tx_thread_run() const {
 
     while (shouldRun) {
         // Scan for the device:
-        std::shared_ptr<BLEDevice> device{nullptr};
+        std::shared_ptr<BTCoffeeMaker> device{nullptr};
         while (shouldRun && !device) {
             device = scan_for_device("TT214H BlueFrog");
             if (!device) {

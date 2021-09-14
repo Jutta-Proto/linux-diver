@@ -49,12 +49,12 @@ include(FetchContent)
 # Linting:
 if(${JUTTA_DRIVER_ENABLE_LINTING})
     message(STATUS "Enabling linting")
-    include(clang-tidy)
+    # include(clang-tidy)
 else()
     message(STATUS "Linting is disabled")
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
 
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")

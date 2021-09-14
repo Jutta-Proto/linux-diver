@@ -7,7 +7,9 @@ add_library(jutta_bt_driver STATIC JuttaBTDriver.hpp
                                    BLEDevice.cpp
                                    BLEDevice.hpp
                                    Obfuscator.cpp
-                                   Obfuscator.hpp)
+                                   Obfuscator.hpp
+                                   BTCoffeeMaker.cpp
+                                   BTCoffeeMaker.hpp)
 target_link_libraries(jutta_bt_driver PRIVATE jutta_driver jutta_proto logger
                                       PUBLIC gattlib)
 
