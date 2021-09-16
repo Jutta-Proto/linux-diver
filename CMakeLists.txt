@@ -47,9 +47,9 @@ include(clear_variable)
 include(FetchContent)
 
 # Linting:
-if(${JUTTA_DRIVER_ENABLE_LINTING})
+if(JUTTA_DRIVER_ENABLE_LINTING)
     message(STATUS "Enabling linting")
-    # include(clang-tidy)
+    include(clang-tidy)
 else()
     message(STATUS "Linting is disabled")
 endif()
