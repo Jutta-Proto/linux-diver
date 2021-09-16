@@ -19,10 +19,11 @@
 //---------------------------------------------------------------------------
 namespace jutta_bt_driver {
 //---------------------------------------------------------------------------
-BLEDevice::BLEDevice(std::string&& name, std::string&& addr, OnCharacteristicReadFunc onCharacteristicRead, OnConnectedFunc onConnected) : name(std::move(name)),
-                                                                                                                                           addr(std::move(addr)),
-                                                                                                                                           onCharacteristicRead(std::move(onCharacteristicRead)),
-                                                                                                                                           onConnected(std::move(onConnected)) {}
+BLEDevice::BLEDevice(std::string&& name, std::string&& addr, OnCharacteristicReadFunc onCharacteristicRead, OnConnectedFunc onConnected, OnDisconnectedFunc onDisconnected) : name(std::move(name)),
+                                                                                                                                                                              addr(std::move(addr)),
+                                                                                                                                                                              onCharacteristicRead(std::move(onCharacteristicRead)),
+                                                                                                                                                                              onConnected(std::move(onConnected)),
+                                                                                                                                                                              onDisconnected(std::move(onDisconnected)) {}
 
 const std::vector<uint8_t> BLEDevice::to_vec(const uint8_t* data, size_t len) {
     const uint8_t* dataBuf = static_cast<const uint8_t*>(data);
@@ -68,8 +69,15 @@ bool BLEDevice::connect() {
         return false;
     }
     SPDLOG_INFO("Discovered {} services.", serviceCount);
+    SPDLOG_DEBUG("BLEDevice connected.");
+    connected = true;
+    gattlib_register_on_disconnect(connection, &BLEDevice::on_disconnected, this);
     onConnected();
     return true;
+}
+
+bool BLEDevice::is_connected() const {
+    return connected;
 }
 
 void BLEDevice::read_characteristics() {
@@ -99,6 +107,13 @@ void BLEDevice::read_characteristics() {
         }
         SPDLOG_DEBUG("Found characteristic with UUID: {}", uuidStr.data());
     }
+}
+
+void BLEDevice::on_disconnected(void* arg) {
+    BLEDevice* device = static_cast<BLEDevice*>(arg);
+    device->connected = false;
+    device->onDisconnected();
+    SPDLOG_DEBUG("BLEDevice disconnected.");
 }
 //---------------------------------------------------------------------------
 }  // namespace jutta_bt_driver

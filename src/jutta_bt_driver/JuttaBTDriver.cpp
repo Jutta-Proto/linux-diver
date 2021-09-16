@@ -116,6 +116,9 @@ void JuttaBTDriver::rx_tx_thread_run() const {
             // Connect to the device:
             if (device->connect()) {
                 SPDLOG_INFO("Connected!");
+                while (shouldRun && device->is_connected()) {
+                    std::this_thread::sleep_for(std::chrono::seconds{1});
+                }
             }
         }
     }

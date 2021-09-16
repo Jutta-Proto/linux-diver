@@ -5,11 +5,38 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <bluetooth/sdp.h>
 
 //---------------------------------------------------------------------------
 namespace jutta_bt_driver {
 //---------------------------------------------------------------------------
+struct RelevantUUIDs {
+    uuid_t DEFAULT_SERVICE_UUID{};
+    uuid_t ABOUT_MACHINE_CHARACTERISTIC_UUID{};
+    uuid_t MACHINE_STATUS_CHARACTERISTIC_UUID{};
+    uuid_t BARISTA_MODE_CHARACTERISTIC_UUID{};
+    uuid_t PRODUCT_PROGRESS_CHARACTERISTIC_UUID{};
+    uuid_t P_MODE_CHARACTERISTIC_UUID{};
+    uuid_t P_MODE_READ_CHARACTERISTIC_UUID{};
+    uuid_t START_PRODUCT_CHARACTERISTIC_UUID{};
+    uuid_t STATISTICS_COMMAND_CHARACTERISTIC_UUID{};
+    uuid_t STATISTICS_DATA_CHARACTERISTIC_UUID{};
+    uuid_t UPDATE_PRODUCT_CHARACTERISTIC_UUID{};
+
+    uuid_t UART_SERVICE_UUID{};
+    uuid_t UART_TX_CHARACTERISTIC_UUID{};
+    uuid_t UART_RX_CHARACTERISTIC_UUID{};
+
+    RelevantUUIDs() noexcept;
+
+ private:
+    static void to_uuid(const std::string& s, uuid_t* uuid);
+} __attribute__((aligned(128)));
+
 class BTCoffeeMaker {
+ public:
+    static const RelevantUUIDs RELEVANT_UUIDS;
+
  private:
     BLEDevice bleDevice;
 
@@ -38,6 +65,7 @@ class BTCoffeeMaker {
     ~BTCoffeeMaker() = default;
 
     bool connect();
+    bool is_connected();
 
  private:
     void analyze_man_data();
@@ -51,6 +79,7 @@ class BTCoffeeMaker {
 
     void on_characteristic_read(const std::vector<uint8_t>& data, const uuid_t& uuid);
     void on_connected();
+    void on_disconnected();
 };
 //---------------------------------------------------------------------------
 }  // namespace jutta_bt_driver
