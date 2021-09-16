@@ -1,5 +1,6 @@
 #include "BTCoffeeMaker.hpp"
 #include "Obfuscator.hpp"
+#include "Utils.hpp"
 #include "gattlib.h"
 #include "logger/Logger.hpp"
 #include <bluetooth/sdp.h>
@@ -42,7 +43,8 @@ BTCoffeeMaker::BTCoffeeMaker(std::string&& name, std::string&& addr) : bleDevice
                                                                            std::move(addr),
                                                                            [this](const std::vector<uint8_t>& data, const uuid_t& uuid) { this->on_characteristic_read(data, uuid); },
                                                                            [this]() { this->on_connected(); },
-                                                                           [this]() { this->on_disconnected(); }) {}
+                                                                           [this]() { this->on_disconnected(); },
+                                                                           [this](const std::vector<uint8_t>& data, const uuid_t& uuid) { this->on_characteristic_read(data, uuid); }) {}
 
 std::string BTCoffeeMaker::parse_version(const std::vector<uint8_t>& data, size_t from, size_t to) {
     std::string result;
@@ -71,6 +73,21 @@ void BTCoffeeMaker::parse_machine_status(const std::vector<uint8_t>& data, uint8
         uint8_t b3 = ((b2 & 0xCC) >> 2) | ((b2 & 0x33) << 2);
         alertVec[i - 1] = ((b3 & 0xAA) >> 1) | ((b3 & 0x55) << 1);
     }
+    SPDLOG_INFO("Machine status: {}", to_hex_string(actData));
+
+    // FA5809EE05A5FFE2FA2C33C233222CA35DF2B7 Closed
+    // 1D6809EE05A5FFE2FA2C33C233222CA35DF2F7 Open
+
+    // D9B81A9077A7A5FF475F34CC43CC4434C5BA4FED Water
+    // D9881A9077A0A5FF475F34CC43CC4434C5BA4FED No water
+    // D9B8169077A0A5FF475F34CC43CC4434C5BA4FEF Water
+
+    // D9B8199077A7A5FF475F34CC43CC4434C5BA4FEF Heating
+    // D9B81A9077A7A5FF475F34CC43CC4434C5BA4FED Ready
+}
+
+void BTCoffeeMaker::parse_product_progress(const std::vector<uint8_t>& data, uint8_t key) {
+    std::vector<std::uint8_t> actData = deobfuscate(data, key);
 }
 
 void BTCoffeeMaker::analyze_man_data() {
@@ -100,23 +117,55 @@ std::chrono::year_month_day BTCoffeeMaker::to_ymd(const std::vector<uint8_t>& da
 }
 
 void BTCoffeeMaker::on_characteristic_read(const std::vector<uint8_t>& data, const uuid_t& uuid) {
-    // std::array<char, MAX_LEN_UUID_STR + 1> uuidStr{};
-    // gattlib_uuid_to_string(&uuid, uuidStr.data(), uuidStr.size());
+    std::array<char, MAX_LEN_UUID_STR + 1> uuidStr{};
+    gattlib_uuid_to_string(&uuid, uuidStr.data(), uuidStr.size());
+    SPDLOG_INFO("Received {} bytes of data from characteristic '{}'.", data.size(), uuidStr.data());
 
     // About UUID:
     if (gattlib_uuid_cmp(&uuid, &RELEVANT_UUIDS.ABOUT_MACHINE_CHARACTERISTIC_UUID) == GATTLIB_SUCCESS) {
         parse_about_data(data);
     }
     // Machine status:
-    if (gattlib_uuid_cmp(&uuid, &RELEVANT_UUIDS.MACHINE_STATUS_CHARACTERISTIC_UUID) == GATTLIB_SUCCESS) {
+    else if (gattlib_uuid_cmp(&uuid, &RELEVANT_UUIDS.MACHINE_STATUS_CHARACTERISTIC_UUID) == GATTLIB_SUCCESS) {
         parse_machine_status(data, key);
+    }  // Product progress:
+    else if (gattlib_uuid_cmp(&uuid, &RELEVANT_UUIDS.PRODUCT_PROGRESS_CHARACTERISTIC_UUID) == GATTLIB_SUCCESS) {
+        parse_product_progress(data, key);
     } else {
         // TODO print
     }
 }
+void BTCoffeeMaker::request_status() {
+    bleDevice.read_characteristic(RELEVANT_UUIDS.MACHINE_STATUS_CHARACTERISTIC_UUID);
+}
+
+void BTCoffeeMaker::request_progress() {
+    bleDevice.read_characteristic(RELEVANT_UUIDS.PRODUCT_PROGRESS_CHARACTERISTIC_UUID);
+}
+
+void BTCoffeeMaker::request_about_info() {
+    bleDevice.read_characteristic(RELEVANT_UUIDS.ABOUT_MACHINE_CHARACTERISTIC_UUID);
+}
+
+bool BTCoffeeMaker::write(const uuid_t& characteristic, const std::vector<uint8_t>& data, bool obfuscate) {
+    std::vector<uint8_t> obfuscatedData = data;
+    if (obfuscate) {
+        obfuscatedData[0] = key;
+        obfuscatedData = deobfuscate(obfuscatedData, key);
+    }
+    return bleDevice.write(characteristic, obfuscatedData);
+}
+
+void BTCoffeeMaker::restart_coffee_maker() {
+    static const std::vector<uint8_t> command{0x00, 0x46, 0x02};
+    write(RELEVANT_UUIDS.P_MODE_CHARACTERISTIC_UUID, command, true);
+}
 
 void BTCoffeeMaker::on_connected() {
-    bleDevice.read_characteristics();
+    // bleDevice.read_characteristics();
+    request_status();
+    request_progress();
+    request_about_info();
 }
 
 void BTCoffeeMaker::on_disconnected() {

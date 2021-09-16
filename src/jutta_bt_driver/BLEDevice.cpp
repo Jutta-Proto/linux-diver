@@ -14,16 +14,18 @@
 #include <iostream>
 #include <logger/Logger.hpp>
 #include <vector>
+#include <bluetooth/sdp.h>
 #include <spdlog/spdlog.h>
 
 //---------------------------------------------------------------------------
 namespace jutta_bt_driver {
 //---------------------------------------------------------------------------
-BLEDevice::BLEDevice(std::string&& name, std::string&& addr, OnCharacteristicReadFunc onCharacteristicRead, OnConnectedFunc onConnected, OnDisconnectedFunc onDisconnected) : name(std::move(name)),
-                                                                                                                                                                              addr(std::move(addr)),
-                                                                                                                                                                              onCharacteristicRead(std::move(onCharacteristicRead)),
-                                                                                                                                                                              onConnected(std::move(onConnected)),
-                                                                                                                                                                              onDisconnected(std::move(onDisconnected)) {}
+BLEDevice::BLEDevice(std::string&& name, std::string&& addr, OnCharacteristicReadFunc onCharacteristicRead, OnConnectedFunc onConnected, OnDisconnectedFunc onDisconnected, OnCharacteristicNotificationFunc onCharacteristicNotification) : name(std::move(name)),
+                                                                                                                                                                                                                                             addr(std::move(addr)),
+                                                                                                                                                                                                                                             onCharacteristicRead(std::move(onCharacteristicRead)),
+                                                                                                                                                                                                                                             onConnected(std::move(onConnected)),
+                                                                                                                                                                                                                                             onDisconnected(std::move(onDisconnected)),
+                                                                                                                                                                                                                                             onCharacteristicNotification(std::move(onCharacteristicNotification)) {}
 
 const std::vector<uint8_t> BLEDevice::to_vec(const uint8_t* data, size_t len) {
     const uint8_t* dataBuf = static_cast<const uint8_t*>(data);
@@ -70,14 +72,33 @@ bool BLEDevice::connect() {
     }
     SPDLOG_INFO("Discovered {} services.", serviceCount);
     SPDLOG_DEBUG("BLEDevice connected.");
-    connected = true;
     gattlib_register_on_disconnect(connection, &BLEDevice::on_disconnected, this);
+    gattlib_register_notification(connection, &BLEDevice::on_notification, this);
+    connected = true;
     onConnected();
     return true;
 }
 
 bool BLEDevice::is_connected() const {
     return connected;
+}
+
+void BLEDevice::read_characteristic(const uuid_t& characteristic) {
+    uuid_t uuid = characteristic;
+    std::array<char, MAX_LEN_UUID_STR + 1> uuidStr{};
+    gattlib_uuid_to_string(&uuid, uuidStr.data(), uuidStr.size());
+
+    void* buffer = nullptr;
+    size_t bufLen = 0;
+    if (gattlib_read_char_by_uuid(connection, &uuid, &buffer, &bufLen) != GATTLIB_SUCCESS) {
+        SPDLOG_WARN("Failed to read characteristic '{}'.", uuidStr.data());
+        return;
+    }
+    // Convert to a vector:
+    const std::vector<uint8_t> data = to_vec(buffer, bufLen);
+    // NOLINTNEXTLINE (cppcoreguidelines-pro-bounds-pointer-arithmetic)
+    onCharacteristicRead(data, characteristic);
+    SPDLOG_DEBUG("Read {} bytes from '{}'.", bufLen, uuidStr.data());
 }
 
 void BLEDevice::read_characteristics() {
@@ -94,19 +115,32 @@ void BLEDevice::read_characteristics() {
     for (int i = 0; i < characteristics_count; i++) {
         // NOLINTNEXTLINE (cppcoreguidelines-pro-bounds-pointer-arithmetic)
         gattlib_uuid_to_string(&characteristics[i].uuid, uuidStr.data(), uuidStr.size());
-        void* buffer = nullptr;
-        size_t bufLen = 0;
-        // NOLINTNEXTLINE (cppcoreguidelines-pro-bounds-pointer-arithmetic)
-        if (gattlib_read_char_by_uuid(connection, &(characteristics[i].uuid), &buffer, &bufLen)) {
-            SPDLOG_WARN("Read from characteristic without data!");
-        } else {
-            // Convert to a vector:
-            const std::vector<uint8_t> data = to_vec(buffer, bufLen);
-            // NOLINTNEXTLINE (cppcoreguidelines-pro-bounds-pointer-arithmetic)
-            onCharacteristicRead(data, characteristics[i].uuid);
-        }
         SPDLOG_DEBUG("Found characteristic with UUID: {}", uuidStr.data());
     }
+}
+
+bool BLEDevice::write(const uuid_t& characteristic, const std::vector<uint8_t>& data) {
+    uuid_t uuid = characteristic;
+    std::array<char, MAX_LEN_UUID_STR + 1> uuidStr{};
+    gattlib_uuid_to_string(&uuid, uuidStr.data(), uuidStr.size());
+    if (gattlib_write_without_response_char_by_uuid(connection, &uuid, data.data(), data.size()) == GATTLIB_SUCCESS) {
+        SPDLOG_DEBUG("Wrote to characteristic '{}'.", uuidStr.data());
+        return true;
+    }
+    SPDLOG_ERROR("Failed to write to characteristic '{}'!", uuidStr.data());
+    return false;
+}
+
+bool BLEDevice::subscribe(const uuid_t& characteristic) {
+    const uuid_t uuid = characteristic;
+    std::array<char, MAX_LEN_UUID_STR + 1> uuidStr{};
+    gattlib_uuid_to_string(&uuid, uuidStr.data(), uuidStr.size());
+    if (gattlib_notification_start(connection, &uuid) == GATTLIB_SUCCESS) {
+        SPDLOG_DEBUG("Subscribed to characteristic '{}'.", uuidStr.data());
+        return true;
+    }
+    SPDLOG_ERROR("Failed to subscribe to characteristic '{}'!", uuidStr.data());
+    return false;
 }
 
 void BLEDevice::on_disconnected(void* arg) {
@@ -114,6 +148,12 @@ void BLEDevice::on_disconnected(void* arg) {
     device->connected = false;
     device->onDisconnected();
     SPDLOG_DEBUG("BLEDevice disconnected.");
+}
+
+void BLEDevice::on_notification(const uuid_t* uuid, const uint8_t* data, size_t len, void* arg) {
+    BLEDevice* device = static_cast<BLEDevice*>(arg);
+    const std::vector<uint8_t> dataVec = BLEDevice::to_vec(data, len);
+    device->onCharacteristicNotification(dataVec, *uuid);
 }
 //---------------------------------------------------------------------------
 }  // namespace jutta_bt_driver

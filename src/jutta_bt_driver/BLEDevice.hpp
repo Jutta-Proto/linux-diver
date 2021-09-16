@@ -16,6 +16,7 @@ namespace jutta_bt_driver {
 class BLEDevice {
  public:
     using OnCharacteristicReadFunc = std::function<void(const std::vector<uint8_t>&, const uuid_t&)>;
+    using OnCharacteristicNotificationFunc = std::function<void(const std::vector<uint8_t>&, const uuid_t&)>;
     using OnConnectedFunc = std::function<void()>;
     using OnDisconnectedFunc = std::function<void()>;
 
@@ -26,6 +27,7 @@ class BLEDevice {
     OnCharacteristicReadFunc onCharacteristicRead;
     OnConnectedFunc onConnected;
     OnDisconnectedFunc onDisconnected;
+    OnCharacteristicNotificationFunc onCharacteristicNotification;
 
     gatt_connection_t* connection{nullptr};
     int serviceCount{0};
@@ -34,7 +36,7 @@ class BLEDevice {
     bool connected{false};
 
  public:
-    BLEDevice(std::string&& name, std::string&& addr, OnCharacteristicReadFunc onCharacteristicRead, OnConnectedFunc onConnected, OnDisconnectedFunc onDisconnected);
+    BLEDevice(std::string&& name, std::string&& addr, OnCharacteristicReadFunc onCharacteristicRead, OnConnectedFunc onConnected, OnDisconnectedFunc onDisconnected, OnCharacteristicNotificationFunc onCharacteristicNotification);
     BLEDevice(BLEDevice&&) = default;
     BLEDevice(const BLEDevice&) = default;
     BLEDevice& operator=(BLEDevice&&) = delete;
@@ -45,12 +47,16 @@ class BLEDevice {
     [[nodiscard]] bool is_connected() const;
     const std::vector<uint8_t> get_mam_data();
     void read_characteristics();
+    void read_characteristic(const uuid_t& characteristic);
+    bool write(const uuid_t& characteristic, const std::vector<uint8_t>& data);
+    bool subscribe(const uuid_t& characteristic);
 
  private:
     static const std::vector<uint8_t> to_vec(const void* data, size_t len);
     static const std::vector<uint8_t> to_vec(const uint8_t* data, size_t len);
 
     static void on_disconnected(void* arg);
+    static void on_notification(const uuid_t* uuid, const uint8_t* data, size_t len, void* arg);
 };
 //---------------------------------------------------------------------------
 }  // namespace jutta_bt_driver

@@ -67,15 +67,23 @@ class BTCoffeeMaker {
     bool connect();
     bool is_connected();
 
+    void restart_coffee_maker();
+    void request_status();
+    void request_progress();
+    void request_about_info();
+
  private:
     void analyze_man_data();
     void parse_man_data(const std::vector<uint8_t>& data);
     void parse_about_data(const std::vector<uint8_t>& data);
+    void parse_product_progress(const std::vector<uint8_t>& data, uint8_t key);
     static void parse_machine_status(const std::vector<uint8_t>& data, uint8_t key);
     static std::string parse_version(const std::vector<uint8_t>& data, size_t from, size_t to);
 
     static uint16_t to_uint16_t_little_endian(const std::vector<uint8_t>& data, size_t offset);
     static std::chrono::year_month_day to_ymd(const std::vector<uint8_t>& data, size_t offset);
+
+    bool write(const uuid_t& characteristic, const std::vector<uint8_t>& data, bool obfuscate);
 
     void on_characteristic_read(const std::vector<uint8_t>& data, const uuid_t& uuid);
     void on_connected();

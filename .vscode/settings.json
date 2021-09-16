@@ -5,6 +5,6 @@
         ]
     },
     "cmake.configureArgs": [
-        "-DJUTTA_DRIVER_ENABLE_LINTING=ON"
+        "-DJUTTA_DRIVER_ENABLE_LINTING=OFF"
     ]
 }
