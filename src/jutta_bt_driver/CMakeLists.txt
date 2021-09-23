@@ -6,8 +6,8 @@ add_library(jutta_bt_driver STATIC JuttaBTDriver.hpp
                                    BLEHelper.hpp
                                    BLEDevice.cpp
                                    BLEDevice.hpp
-                                   Obfuscator.cpp
-                                   Obfuscator.hpp
+                                   ByteEncDecoder.cpp
+                                   ByteEncDecoder.hpp
                                    BTCoffeeMaker.cpp
                                    BTCoffeeMaker.hpp
                                    Utils.cpp

@@ -1,4 +1,4 @@
-#include "Obfuscator.hpp"
+#include "ByteEncDecoder.hpp"
 #include <array>
 #include <cassert>
 #include <cctype>
@@ -30,7 +30,7 @@ uint8_t shuffle(int dataNibble, int nibbleCount, int keyLeftNibbel, int keyRight
     return mod256(tmp3 - nibbleCount - keyLeftNibbel) % 16;
 }
 
-std::vector<uint8_t> deobfuscate(const std::vector<uint8_t>& data, uint8_t key) {
+std::vector<uint8_t> encDecBytes(const std::vector<uint8_t>& data, uint8_t key) {
     std::vector<uint8_t> result;
     result.resize(data.size());
     uint8_t keyLeftNibbel = key >> 4;

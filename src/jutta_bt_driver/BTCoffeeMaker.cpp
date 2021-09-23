@@ -1,5 +1,5 @@
 #include "BTCoffeeMaker.hpp"
-#include "Obfuscator.hpp"
+#include "ByteEncDecoder.hpp"
 #include "Utils.hpp"
 #include "gattlib.h"
 #include "logger/Logger.hpp"
@@ -63,7 +63,7 @@ void BTCoffeeMaker::parse_about_data(const std::vector<uint8_t>& data) {
 }
 
 void BTCoffeeMaker::parse_machine_status(const std::vector<uint8_t>& data, uint8_t key) {
-    std::vector<std::uint8_t> alertVec = deobfuscate(data, key);
+    std::vector<std::uint8_t> alertVec = encDecBytes(data, key);
     // If this one fails, the deobfuscation failed:
     assert(alertVec[0] == key);
     // TODO parse bits
@@ -72,7 +72,7 @@ void BTCoffeeMaker::parse_machine_status(const std::vector<uint8_t>& data, uint8
 }
 
 void BTCoffeeMaker::parse_product_progress(const std::vector<uint8_t>& data, uint8_t key) {
-    std::vector<std::uint8_t> actData = deobfuscate(data, key);
+    std::vector<std::uint8_t> actData = encDecBytes(data, key);
 }
 
 void BTCoffeeMaker::analyze_man_data() {
@@ -132,23 +132,41 @@ void BTCoffeeMaker::request_about_info() {
     bleDevice.read_characteristic(RELEVANT_UUIDS.ABOUT_MACHINE_CHARACTERISTIC_UUID);
 }
 
-bool BTCoffeeMaker::write(const uuid_t& characteristic, const std::vector<uint8_t>& data, bool obfuscate) {
-    std::vector<uint8_t> obfuscatedData = data;
-    if (obfuscate) {
-        obfuscatedData[0] = key;
-        obfuscatedData = deobfuscate(obfuscatedData, key);
+bool BTCoffeeMaker::write(const uuid_t& characteristic, const std::vector<uint8_t>& data, bool encode, bool overrideKey) {
+    std::vector<uint8_t> encodedData = data;
+    if (encode) {
+        encodedData[0] = key;
+        if (overrideKey) {
+            encodedData[encodedData.size() - 1] = key;
+        }
+        encodedData = encDecBytes(encodedData, key);
     }
-    return bleDevice.write(characteristic, obfuscatedData);
+    return bleDevice.write(characteristic, encodedData);
 }
 
 void BTCoffeeMaker::restart_coffee_maker() {
+    SPDLOG_INFO("Restarting the coffee maker...");
     static const std::vector<uint8_t> command{0x00, 0x46, 0x02};
-    write(RELEVANT_UUIDS.P_MODE_CHARACTERISTIC_UUID, command, true);
+    write(RELEVANT_UUIDS.P_MODE_CHARACTERISTIC_UUID, command, true, false);
+}
+
+void BTCoffeeMaker::request_coffee() {
+    SPDLOG_INFO("Requesting coffee...");
+    static const std::vector<uint8_t> command{0x00, 0x03, 0x02};
+    write(RELEVANT_UUIDS.START_PRODUCT_CHARACTERISTIC_UUID, command, true, true);
+}
+
+void BTCoffeeMaker::stay_in_ble() {
+    SPDLOG_INFO("Sending stay in BLE mode...");
+    static const std::vector<uint8_t> command{0x00, 0x7F, 0x80};
+    write(RELEVANT_UUIDS.START_PRODUCT_CHARACTERISTIC_UUID, command, true, false);
 }
 
 void BTCoffeeMaker::on_connected() {
     // Ensure we have the key for deobfuscation ready:
     analyze_man_data();
+    stay_in_ble();
+    restart_coffee_maker();
 
     // Read the initial status:
     // bleDevice.read_characteristics();

@@ -64,12 +64,30 @@ class BTCoffeeMaker {
     BTCoffeeMaker& operator=(const BTCoffeeMaker&) = delete;
     ~BTCoffeeMaker() = default;
 
+    /**
+     * Connects to the bluetooth device and returns true on success.
+     **/
     bool connect();
+    /**
+     * Returns true in case the coffee maker is connected via bluetooth.
+     **/
     bool is_connected();
 
+    /**
+     * Sends the restart command to the coffee maker.
+     **/
     void restart_coffee_maker();
+    /**
+     * Requests the current status of the coffee maker.
+     **/
     void request_status();
+    /**
+     * Requests the current product progress.
+     **/
     void request_progress();
+    /**
+     * Requests the about coffee maker info.
+     **/
     void request_about_info();
 
  private:
@@ -77,16 +95,39 @@ class BTCoffeeMaker {
     void parse_man_data(const std::vector<uint8_t>& data);
     void parse_about_data(const std::vector<uint8_t>& data);
     void parse_product_progress(const std::vector<uint8_t>& data, uint8_t key);
+    void request_coffee();
+    void stay_in_ble();
     static void parse_machine_status(const std::vector<uint8_t>& data, uint8_t key);
     static std::string parse_version(const std::vector<uint8_t>& data, size_t from, size_t to);
 
+    /**
+     * Converts the given data to an uint16_t from little endian.
+     **/
     static uint16_t to_uint16_t_little_endian(const std::vector<uint8_t>& data, size_t offset);
+    /**
+     * Parses the given data as a std::chrono::year_month_day object.
+     **/
     static std::chrono::year_month_day to_ymd(const std::vector<uint8_t>& data, size_t offset);
 
-    bool write(const uuid_t& characteristic, const std::vector<uint8_t>& data, bool obfuscate);
+    /**
+     * Writes the given data to the given characteristic.
+     * Allows you to specify wether the data should be encoded and the key inside the data should be overriden.
+     * Usually you only want to set encode to true.
+     **/
+    bool write(const uuid_t& characteristic, const std::vector<uint8_t>& data, bool encode, bool overrideKey);
 
+    /**
+     * Event handler that gets triggered when a characteristic got read.
+     * data: The data read which might be encoded and has to be decoded.
+     **/
     void on_characteristic_read(const std::vector<uint8_t>& data, const uuid_t& uuid);
+    /**
+     * Event handler that gets triggered when the coffee maker is connetced.
+     **/
     void on_connected();
+    /**
+     * Event handler that gets triggered when the coffee maker is disconnected.
+     **/
     void on_disconnected();
 };
 //---------------------------------------------------------------------------
