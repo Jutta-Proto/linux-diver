@@ -63,27 +63,12 @@ void BTCoffeeMaker::parse_about_data(const std::vector<uint8_t>& data) {
 }
 
 void BTCoffeeMaker::parse_machine_status(const std::vector<uint8_t>& data, uint8_t key) {
-    std::vector<std::uint8_t> actData = deobfuscate(data, key);
-
-    std::vector<uint8_t> alertVec;
-    alertVec.resize(19);
-    for (size_t i = 1; i < actData.size(); i++) {
-        uint8_t b = actData[i];
-        uint8_t b2 = ((b & 0xF0) >> 4) | ((b & 0xF) << 4);
-        uint8_t b3 = ((b2 & 0xCC) >> 2) | ((b2 & 0x33) << 2);
-        alertVec[i - 1] = ((b3 & 0xAA) >> 1) | ((b3 & 0x55) << 1);
-    }
-    SPDLOG_INFO("Machine status: {}", to_hex_string(actData));
-
-    // FA5809EE05A5FFE2FA2C33C233222CA35DF2B7 Closed
-    // 1D6809EE05A5FFE2FA2C33C233222CA35DF2F7 Open
-
-    // D9B81A9077A7A5FF475F34CC43CC4434C5BA4FED Water
-    // D9881A9077A0A5FF475F34CC43CC4434C5BA4FED No water
-    // D9B8169077A0A5FF475F34CC43CC4434C5BA4FEF Water
-
-    // D9B8199077A7A5FF475F34CC43CC4434C5BA4FEF Heating
-    // D9B81A9077A7A5FF475F34CC43CC4434C5BA4FED Ready
+    std::vector<std::uint8_t> alertVec = deobfuscate(data, key);
+    // If this one fails, the deobfuscation failed:
+    assert(alertVec[0] == key);
+    // TODO parse bits
+    // Start with an offset of one byte, since the first byte should represent the key for deobfuscating.
+    SPDLOG_INFO("Machine status alertVec: {}", to_hex_string(alertVec));
 }
 
 void BTCoffeeMaker::parse_product_progress(const std::vector<uint8_t>& data, uint8_t key) {
@@ -162,6 +147,10 @@ void BTCoffeeMaker::restart_coffee_maker() {
 }
 
 void BTCoffeeMaker::on_connected() {
+    // Ensure we have the key for deobfuscation ready:
+    analyze_man_data();
+
+    // Read the initial status:
     // bleDevice.read_characteristics();
     request_status();
     request_progress();
